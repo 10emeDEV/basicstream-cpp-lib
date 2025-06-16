@@ -8,7 +8,7 @@ and input() functions with color parameters.
 Installation:
 -------------
 
-1. Place the `basicstream` file (without extension) in this folder.
+1. Place the `basicstream` file (without extension) with the .bat file in the same folder.
 2. Double-click `install_basicstream.bat`.
 3. The script will copy the file to your MinGW include directory.
 4. You can then use the library in your code like this:
@@ -26,6 +26,7 @@ Requirements:
 - Windows with MinGW installed.
 - g++ must be in the system PATH.
 - MinGW must contain an `include` folder in its root directory.
+- GCC 15.1 recommended.
 
 License:
 --------
