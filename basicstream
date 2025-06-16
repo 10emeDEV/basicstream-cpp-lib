@@ -1,0 +1,396 @@
+#include <iostream>
+#include <sstream>
+#include <cstdint>
+#include <ctime>
+
+#define var auto
+#define deduce auto
+
+using namespace std;
+
+namespace color{
+
+    // 8 basics ANSI text colors
+
+    const string black = "\033[30m";
+    const string red = "\033[31m";
+    const string green = "\033[32m";
+    const string yellow = "\033[33m";
+    const string blue = "\033[34m";
+    const string magenta = "\033[35m";
+    const string cyan = "\033[36m";
+    const string white = "\033[37m";
+
+    // 8 basics in bright mode
+
+    const string light_grey = "\033[90m";
+    const string bright_red = "\033[91m";
+    const string bright_green = "\033[92m";
+    const string bright_yellow = "\033[93m";
+    const string bright_blue = "\033[94m";
+    const string bright_magenta = "\033[95m";
+    const string bright_cyan = "\033[96m";
+    const string bright_white = "\033[97m";
+
+    // reset all colors
+    const string default_color = "\033[0m";
+}
+
+namespace style{
+
+    // 8 basics ANSI backgrounds colors
+
+    const string black_background = "\033[30m";
+    const string red_background = "\033[31m";
+    const string green_background = "\033[32m";
+    const string yellow_background = "\033[33m";
+    const string blue_background = "\033[34m";
+    const string magenta_background = "\033[35m";
+    const string cyan_background = "\033[36m";
+    const string white_background = "\033[37m";
+
+    // 8 basics in bright mode
+
+    const string light_grey_background = "\033[100m";
+    const string bright_red_background = "\033[101m";
+    const string bright_green_background = "\033[102m";
+    const string bright_yellow_background = "\033[103m";
+    const string bright_blue_background = "\033[104m";
+    const string bright_magenta_background = "\033[105m";
+    const string bright_cyan_background = "\033[106m";
+    const string bright_white_background = "\033[107m";
+
+    // advanced text styles
+
+    const string bold = "\033[1m";
+    const string faint = "\033[2m";
+    const string italic = "\033[3m";
+    const string underline = "\033[4m";
+    const string slow_blink = "\033[5m";
+    const string rapid_blink = "\033[6m";
+    const string inverted = "\033[7m";
+    const string hidden = "\033[8m";
+    const string strikethrough = "\033[9m";
+
+    // reset a specific advanced text style
+
+    const string reset_bold = "\033[22m";
+    const string reset_italic = "\033[23m";
+    const string reset_underline = "\033[24m";
+    const string reset_blink = "\033[25m";
+    const string reset_inverted = "\033[27m";
+    const string reset_hidden = "\033[28m";
+    const string reset_strikethrough = "\033[29m";
+
+    // reset all styles
+    const string default_style = "\033[0m";
+}
+
+namespace ANSI{
+    class color256_mode{ // class that uses the 256 ANSI sequences mode for color representation
+        private:
+            string current_color;
+            uint8_t ID;
+
+        public:
+            // default constructor -> always set color to default
+            color256_mode(){
+                current_color = color::default_color;
+            }
+
+            // constructor with color ID as parameter
+            color256_mode(uint8_t _color){
+                set_color(_color);
+            }
+
+            // <------------------------------------------------------------------------------------------------------>
+
+            // operator overloading
+
+            bool operator==(const color256_mode& other) const{
+                return ID == other.ID;
+            }
+
+            bool operator!=(const color256_mode& other) const{
+                return !(ID == other.ID);
+            }
+
+            friend ostream& operator<<(ostream& output_str, const color256_mode& output_color){
+                output_str << output_color.current_color;
+                return output_str;
+            }
+
+            // <------------------------------------------------------------------------------------------------------>
+
+            // return the color as a number
+            int get_id(){
+                return ID;
+            }
+            
+            // set the active color
+            void set_color(uint8_t colorID){
+                ostringstream escapeSequence;
+                escapeSequence << "\033[38;5;" << +colorID << "m";
+                current_color = escapeSequence.str();
+                
+                ID = +colorID;
+            }
+
+            /*
+            change to next color
+            if the color ID is less than 255, there is a next color -> "id++"
+            if the color ID is equal or above to 255, this is the last color -> return false and set the overflow to go back to the fist one
+            */
+            bool next_color(){
+                if (get_id() < 255){
+                    set_color(get_id() + 1);
+                    return true;
+                }
+                else{
+                    set_color(0);
+                    return false;
+                }
+            }
+
+            /*
+            change to previous color
+            if the color ID is above 0, there is a previous color -> "id--"
+            if the color ID is equal or under to 0, this is the first color -> return false and set the overflow to go back to the last one
+            */
+            bool previous_color(){ 
+                if (get_id() > 0){
+                    set_color(get_id() - 1);
+                    return true;
+                }
+                else{
+                    set_color(255); 
+                    return false;
+                }
+            }
+
+            // set to first color
+            void first_color(){
+                set_color(0);
+            }
+
+            // set to last color
+            void last_color(){
+                set_color(255);
+            }
+
+            // set to a random color
+            void random_color(){
+                srand(time(NULL));
+                set_color(rand() % 256);
+            }
+    };
+
+    class RGB_24bit{ // class that use the ANSI "true color mode" for representing over 16 million colors
+        private:
+            string current_color;
+            uint8_t r_value;
+            uint8_t g_value;
+            uint8_t b_value;
+
+        public:
+            // default constructor -> always set color to default
+            RGB_24bit(){
+                current_color = color::default_color;
+            }
+
+            // constructor with RGB components as parameters
+            RGB_24bit(uint8_t colorA, uint8_t colorB, uint8_t colorC){
+                set_color(colorA, colorB, colorC);
+            }
+
+            // <------------------------------------------------------------------------------------------------------>
+
+            // operator overloading
+
+            bool operator==(const RGB_24bit& other) const{
+                return (r_value == other.r_value && g_value == other.g_value && b_value == other.b_value);
+            }
+
+            bool operator!=(const RGB_24bit& other) const{
+                return !(r_value == other.r_value && g_value == other.g_value && b_value == other.b_value);
+            }
+
+            friend ostream& operator<<(ostream& output_str, const RGB_24bit& output_color){
+                output_str << output_color.current_color;
+                return output_str;
+            }
+
+            // <------------------------------------------------------------------------------------------------------>
+
+            // return the red component value
+            int red(){
+                return r_value;
+            }
+
+            // return the green component value
+            int green(){
+                return g_value;
+            }
+
+            // return the blue component value
+            int blue(){
+                return b_value;
+            }
+
+            // set the active color with the RGB components
+            void set_color(uint8_t r, uint8_t g, uint8_t b){
+                ostringstream escapeSequence;
+                escapeSequence << "\033[38;2;" << +r << ";" << +g << ";" << +b << "m";
+                current_color = escapeSequence.str();
+
+                r_value = +r;
+                g_value = +g;
+                b_value = +b;
+            }
+
+            /* 
+            change to next color
+            return false if the current color was the last before the overflow and reset to first color
+            return true if there still a next color and set it to it
+            */
+            bool next_color(){
+                if (blue() < 255){
+                    set_color(red(), green(), blue() + 1);
+                } 
+                else if (green() < 255){
+                    set_color(red(), green() + 1, 0);
+                } 
+                else if (red() < 255){
+                    set_color(red() + 1, 0, 0);
+                }
+                else{
+                    set_color(0, 0, 0); 
+                    return false;
+                }
+                return true;
+            }
+
+            /* 
+            change to previous color
+            return false if the current color was the last before the overflow and reset to last color
+            return true if there still a previous color and set it to it
+            */
+            bool previous_color(){
+                if (blue() > 0){
+                    set_color(red(), green(), blue() - 1);
+                } 
+                else if (green() > 0){
+                    set_color(red(), green() - 1, 255);
+                } 
+                else if (red() > 0){
+                    set_color(red() - 1, 255, 255);
+                } 
+                else{
+                    set_color(255, 255, 255);
+                    return false;
+                }
+                return true;
+            }
+
+            // set to first RGB color (black)
+            void first_color(){
+                set_color(0, 0, 0);
+            }
+
+            // set to last RGB color (white)
+            void last_color(){
+                set_color(255, 255, 255);
+            }
+
+            // set to a random color
+            void random_color(){
+                srand(time(NULL));
+                set_color(rand() % 256, rand() % 256, rand() % 256);
+            }
+    };
+}
+
+// print function with custom text color, can support fstring with 5 parameters
+template <typename Stream = string, typename T0 = int, typename T1 = int, typename T2 = int, typename T3 = int, typename T4 = int>
+void print(const Stream& stream, const ANSI::RGB_24bit& text_color = ANSI::RGB_24bit(), const T0& p0 = T0{}, const T1& p1 = T1{}, const T2& p2 = T2{}, const T3& p3 = T3{}, const T4& p4 = T4{}){
+    if constexpr (is_convertible_v<Stream, string>){
+        string f_string = stream;
+
+        if (f_string[0] == 'f' && f_string[1] == '(' && f_string[f_string.length() - 1] == ')'){
+            string output_string = f_string.substr(2, f_string.length() - 3);
+            string parameterList[5] = {"{0}", "{1}", "{2}", "{3}", "{4}"};
+
+            for (string parameter : parameterList){
+                size_t pos = 0;
+
+                while ((pos = output_string.find(parameter, pos)) != std::string::npos){
+                    if (parameter == "{0}"){
+                        ostringstream oss;
+                        oss << p0;
+                        string output_parameter = oss.str();
+
+                        output_string.replace(pos, parameter.length(), output_parameter);
+                        pos += output_parameter.length();
+                    }
+                    else if (parameter == "{1}"){
+                        ostringstream oss;
+                        oss << p1;
+                        string output_parameter = oss.str();
+
+                        output_string.replace(pos, parameter.length(), output_parameter);
+                        pos += output_parameter.length();
+                    }
+                    else if (parameter == "{2}"){
+                        ostringstream oss;
+                        oss << p2;
+                        string output_parameter = oss.str();
+
+                        output_string.replace(pos, parameter.length(), output_parameter);
+                        pos += output_parameter.length();
+                    }
+                    else if (parameter == "{3}"){
+                        ostringstream oss;
+                        oss << p3;
+                        string output_parameter = oss.str();
+
+                        output_string.replace(pos, parameter.length(), output_parameter);
+                        pos += output_parameter.length();
+                    }
+                    else if (parameter == "{4}"){
+                        ostringstream oss;
+                        oss << p4;
+                        string output_parameter = oss.str();
+
+                        output_string.replace(pos, parameter.length(), output_parameter);
+                        pos += output_parameter.length();
+                    }
+                }
+            }
+
+            cout << text_color << output_string << color::default_color << endl;
+        }
+        else{
+            cout << text_color << stream << color::default_color << endl;
+        }
+    }
+    else{
+        cout << text_color << stream << color::default_color << endl;
+    }
+}
+
+// input function with custom string output and color, using int as default type
+template <typename Stream = int>
+Stream input(const string& message = "", const ANSI::RGB_24bit& text_color = ANSI::RGB_24bit()){
+    if (!message.empty()){
+        cout << text_color << message << color::default_color;
+    }
+
+    Stream stream;
+    if constexpr (is_same_v<Stream, string>){
+        getline(cin >> ws, stream);
+    }
+    else{
+        cin >> stream;
+    }
+    return stream;
+}
