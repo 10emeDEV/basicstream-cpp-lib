@@ -13,7 +13,9 @@ Installation:
 3. The script will copy the file to your MinGW include directory.
 4. You can then use the library in your code like this:
 
+    ```
     #include <basicstream>
+    ```
 
 Compilation:
 ------------
